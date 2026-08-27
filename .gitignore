@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+.env
+config/
+cache/
+logs/*.log*
+data/jarvis.db*
+data/settings.json
+data/screenshots/
+models/
+dist/
+build/
+*.tmp
+*.invalid.json

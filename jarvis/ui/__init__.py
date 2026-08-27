@@ -1,0 +1,2 @@
+"""Interface desktop PySide6."""
+

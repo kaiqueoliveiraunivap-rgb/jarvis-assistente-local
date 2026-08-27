@@ -1,0 +1,7 @@
+-r requirements.txt
+sounddevice>=0.4.7,<1
+numpy>=1.26,<3
+faster-whisper>=1.0,<2
+openwakeword>=0.6,<1
+piper-tts>=1.2,<2
+

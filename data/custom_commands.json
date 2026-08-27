@@ -1,0 +1,16 @@
+{
+  "aliases": {
+    "navegador": "chrome"
+  },
+  "macros": {
+    "modo_programacao": {
+      "description": "Preparar ambiente de programação",
+      "triggers": ["modo programação", "vamos trabalhar"],
+      "actions": [
+        {"tool": "open_app", "args": {"name": "vs code"}},
+        {"tool": "open_app", "args": {"name": "chrome"}},
+        {"tool": "open_app", "args": {"name": "spotify"}}
+      ]
+    }
+  }
+}
