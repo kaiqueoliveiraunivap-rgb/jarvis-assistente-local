@@ -7,11 +7,11 @@ import threading
 from datetime import datetime
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QProcess, Qt, QTimer, Signal
+from PySide6.QtCore import QEasingCurve, QObject, QProcess, QPropertyAnimation, Qt, QTimer, Signal
 from PySide6.QtGui import QColor, QCloseEvent, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QApplication, QFrame, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QMainWindow,
-    QMessageBox, QPushButton, QProgressBar, QSizePolicy, QStackedWidget, QSystemTrayIcon,
+    QMessageBox, QPushButton, QProgressBar, QSizePolicy, QSystemTrayIcon,
     QTextBrowser, QVBoxLayout, QWidget,
 )
 
@@ -22,6 +22,7 @@ from jarvis.core.decision_engine import Decision, DecisionContext, DecisionEngin
 from jarvis.core.state_manager import AssistantState
 from jarvis.ui.core_visual import CoreVisual
 from jarvis.ui.commands_page import CommandsPage
+from jarvis.ui.animations import AnimatedHudBackground, AnimatedPageStack, StatusPulse
 from jarvis.ui.first_run import FirstRunWizard
 from jarvis.ui.overlay import StatusOverlay
 from jarvis.ui.settings_window import SettingsWindow
@@ -162,6 +163,9 @@ class MetricCard(QFrame):
         self.bar = QProgressBar()
         self.bar.setTextVisible(False)
         self.bar.setRange(0, 100)
+        self._bar_animation = QPropertyAnimation(self.bar, b"value", self)
+        self._bar_animation.setDuration(520)
+        self._bar_animation.setEasingCurve(QEasingCurve.OutCubic)
         layout.addWidget(self.title)
         layout.addWidget(self.value)
         layout.addWidget(self.bar)
@@ -172,7 +176,11 @@ class MetricCard(QFrame):
             self.bar.setValue(0)
             return
         self.value.setText(f"{value:.0f}{suffix}")
-        self.bar.setValue(round(value))
+        target = round(value)
+        self._bar_animation.stop()
+        self._bar_animation.setStartValue(self.bar.value())
+        self._bar_animation.setEndValue(target)
+        self._bar_animation.start()
 
 
 class MainWindow(QMainWindow):
@@ -216,7 +224,7 @@ class MainWindow(QMainWindow):
             painter.end()
             self.setWindowIcon(QIcon(icon))
 
-        root = QWidget()
+        root = AnimatedHudBackground()
         self.setCentralWidget(root)
         shell = QHBoxLayout(root)
         shell.setContentsMargins(0, 0, 0, 0)
@@ -263,6 +271,7 @@ class MainWindow(QMainWindow):
         brand.setObjectName("brand")
         self.state_label = QLabel("● STARTING")
         self.state_label.setObjectName("state")
+        self._status_pulse = StatusPulse(self.state_label)
         self.clock = QLabel("--:--:--")
         self.clock.setObjectName("clock")
         model = QLabel(f"LOCAL CORE  /  {self.assistant.settings.ai.model}")
@@ -274,7 +283,7 @@ class MainWindow(QMainWindow):
         header.addWidget(self.clock)
         main.addLayout(header)
 
-        self.pages = QStackedWidget()
+        self.pages = AnimatedPageStack()
         dashboard = QWidget()
         dashboard_layout = QVBoxLayout(dashboard)
         dashboard_layout.setContentsMargins(0, 0, 0, 0)
@@ -359,7 +368,7 @@ class MainWindow(QMainWindow):
         self.setStyleSheet(self._stylesheet())
 
     def _switch_page(self, index: int) -> None:
-        self.pages.setCurrentIndex(index)
+        self.pages.show_page(index, animate=self.pages.currentIndex() != index)
         self.dashboard_nav.setChecked(index == 0)
         self.commands_nav.setChecked(index == 1)
 
